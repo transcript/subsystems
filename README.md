@@ -14,9 +14,9 @@ For a full write-up of the initial reasons behind this code, check out the blog 
 ### Usage - creating a single database file with all information
 **Program used:** 	subsys_db_rebuilder.py    
 **Files needed:**	subsystems.complex    
-						subsys2role    
-						subsys2peg    
-						subsys.txt
+			subsys2role    
+			subsys2peg    
+			subsys.txt
 
 
 **Command:**    
@@ -40,9 +40,9 @@ Perhaps you don't care about rebuilding the entire database, and just want to kn
 
 **Program used:**	fig_swapper.py   
 **Files needed:**	subsystems2role    
-						subsystems2peg    
-						subsys.txt    
-						tab-separated results file, with Fig IDs in column 3
+			subsystems2peg    
+			subsys.txt    
+			tab-separated results file, with Fig IDs in column 3
 
 **Command:**    
     `python2.7 fig_swapper.pysubsystems2peg results_file subsystems2role subsys.txt`
