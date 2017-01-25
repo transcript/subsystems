@@ -2,7 +2,6 @@
 
 # fig_swapper.py
 
-# holy shit, this is going to be shitty.  Basically expecting it to fail.
 # purpose: take the fig IDs from the DIAMOND subsystems results and get more info, so I can parse it into categories
 
 import sys, time, re
@@ -13,131 +12,98 @@ try:
 	role_name = sys.argv[3]
 	hierarchy_name = sys.argv[4]
 except IndexError:
-	sys.exit("fig dic as argv1, diamond results file as argv2, subsystems2role as argv3, hierarchy file as argv4")
+	sys.exit("subsystems2peg as argv1, diamond results file as argv2, subsystems2role as argv3, hierarchy file as argv4")
 
+# Step 1: get a reference dictionary of Fig IDs to level 3 hierarchy
+# This step is using subsystems2peg.
 fig_dic = {}
 
 t0 = time.clock()
 
 for line in fig_dic_file:
 	splitline = line.split("\t")
-	try:
-		if splitline[3] == "":
-			fig_dic[splitline[0]] = "NULL"
-		else:
-			fig_dic[splitline[0]] = splitline[3]
-	except IndexError:
-		fig_dic[splitline[0]] = "NULL"
+	fig_dic[splitline[2]] = splitline[0]
 
 fig_dic_file.close()
 
 t1 = time.clock()
 
-print "fig dic assembled, starting on infile comparisons"
+print "Fig ID disctionary assembled from subsystems2peg."
 print "time so far: " + str(t1-t0) + " seconds."
 
-# works up to here without errors, yay, I guess
 
-# now, getting the role from the FIG id, this is file subsystems2role
+# Step 2: build another reference dictionary, connecting level 3 hierarchy to level 4, and to levels 1/2
+# This step is using subsystems2role.
 roles = open(role_name, "r")
 roles_dic = {}
+roles_l4_dic = {}
+
 for line in roles:
 	splitline = line.split("\t")
-	try:
-		roles_dic[splitline[3].strip()] = splitline[0] + "\t" + splitline[2] + "\t" + splitline[1]
-	except IndexError:
-		print line
-		sys.exit()
+	roles_l4_dic[splitline[0]] = splitline[3].strip()
+	roles_dic[splitline[0]] = splitline[2] + "\t" + splitline[1]
 
 roles.close()
+print "Hierarchy read in from subsystems2role."
 
-print "success with roles dic"
 
-# next up, gotta read the hierarchy file to build that hierarchy
+# Step 3: not all entries are in the subsystems2role file.  Some are in subsys.txt.  We need to get those, too.
+# This step is using subsys.txt.
 hierarchy = open(hierarchy_name, "r")
 hier_dic = {}
+hier_l4_dic = {}
 
 for line in hierarchy:
 	splitline = line.split("\t")
-	hier_dic[splitline[3]] = splitline[2] + "\t" + splitline[1] + "\t" + splitline[0]
+	hier_dic[splitline[2]] = splitline[1] + "\t" + splitline[0]
+	hier_l4_dic[splitline[2]] = splitline[3].strip()
 
 hierarchy.close()
+print "Hierarchy read in from subsys.txt."
 
-# now converting the DIAMOND results (after going through analysis_counter) to have all the hierarchy info
 
+# Step 4: Now, we're going to read in our Fig IDs that we want to match to hierarchy, and print the converted info.
+# This step uses an outfile from the SAMSA pipeline.  For your own use, just make sure that you're giving a 3-column tab-separated file as input, and the Fig ID is in the 3rd (final) column.
 infile = open(infile_name, "r")
 outfile = open(infile_name + ".converted", "w")
+line_counter = 0
 errors = 0
-matching_errors = 0
-notfound_errors = 0
 
 for line in infile:
+	line_counter += 1
 	splitline = line.strip().split("\t")
 	
-	#first, check if there's any entry in subsystems.complex.figs associated with this ID
+	#first, check if there's any entry in subsystems2peg associated with this ID
 	try:
-		level4 = fig_dic[splitline[2]]
+		level3 = fig_dic[splitline[2]]
 	except KeyError:
 		strippedline = line.strip()
-		print str(strippedline) + "\tNOT FOUND"
 		outfile.write(line.strip() + "\tNOT FOUND\n")
-		notfound_errors += 1
+		errors += 1
 		continue
 	
-	#next, see if that entry is in the hierarchy file
+	#next, see if that entry is in the subsystems2role file
 	try:
-		hierarchy_entry = roles_dic[level4]
-		outfile.write(line.strip() + "\t" + fig_dic[splitline[2]] + "\t" + hierarchy_entry + "\n")
+		hierarchy_entry = roles_dic[level3]
+		outfile.write(line.strip() + "\t" + roles_l4_dic[level3] + "\t" + level3 + "\t" + hierarchy_entry + "\n")
 	except KeyError:
 		
-		#wait, maybe we can save it if a slash is the issue!
-		if ("/" in level4) or ("@" in level4) or (";" in level4) or ("##" in level4):
-			entry = re.split('/|@|;|##', level4)[0][:-1]
-#			entry = fig_dic[splitline[2]].split("/")[0][:-1]
-			try:
-				hierarchy_entry = roles_dic[entry]
-				outfile.write(line.strip() + "\t" + level4 + "\t" + hierarchy_entry + "\n")
-			except KeyError:
-				#sometimes it's the second half of the slash part
-				try:
-					entry2 = re.split('/|@|;|##', level4)[1][1:]
-				except IndexError:
-					print level4
-					print entry
-					print "Issue at line 105"
-					sys.exit()
-				try:
-					hierarchy_entry = roles_dic[entry2]
-					outfile.write(line.strip() + "\t" + level4 + "\t" + hierarchy_entry + "\n")
-				except KeyError:
-					#sometimes they have a comma that needs removal
-					t_entry = entry.split(",")[0]
-					try:
-						hierarchy_entry = roles_dic[t_entry]
-						outfile.write(line.strip() + "\t" +  level4 + "\t" + hierarchy_entry + "\n")
-					except KeyError:
-						#at this point, god, who knows?
-						matching_errors += 1
-				
-		# otherwise nope, couldn't save it
-		else:
-			try:
-				hierarchy_entry = hier_dic[level4]
-				outfile.write(line.strip() + "\t" + level4 + "\t" + hierarchy_entry + "\n")
-			except KeyError:
-				errors += 1
-				print line.strip()
-				print level4
-				print " "
-				outfile.write(line.strip() + "\t" + level4 + "\tNO HIERARCHY FOUND\n")
+		# perhaps it's in the hierarchy file instead
+		try:
+			hierarchy_entry = hier_dic[level3]
+			outfile.write(line.strip() + "\t" + hier_l4_dic[level3] + "\t" + level3 + "\t" + hierarchy_entry + "\n")
+		except KeyError:
+			
+			# not found
+			outfile.write(line.strip() + "\t" + level4 + "\tNO HIERARCHY FOUND\n")
+			errors += 1
 
 t2 = time.clock()
 
-print "all done"
-print "time for second part: " + str(t2-t1) + " seconds."
-print "number of fig IDs not found to have any match: " + str(notfound_errors)
-print "number of hierarchy errors (no match in hierarchy file): " + str(errors)
-print "number of errors after all my trying things: " + str(matching_errors)
+print "All done"
+print "Time for second part: " + str(t2-t1) + " seconds."
+print "Total number of lines read: " + str(line_counter)
+print "Number of hierarchy errors (no match in hierarchy or subsystems2role files to the Fig ID): " + str(errors)
 
 infile.close()
 outfile.close()
