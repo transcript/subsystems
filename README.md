@@ -12,11 +12,13 @@ For a full write-up of the initial reasons behind this code, check out the blog 
 * subsys_db_rebuilder - performs all of the above steps to create one large index file with all combined information.  Best for creating a single custom database that can be searched later.
 
 ### Usage - creating a single database file with all information
-**Program used:** 	subsys_db_rebuilder.py    
-**Files needed:**	subsystems.complex    
-			subsys2role    
-			subsys2peg    
-			subsys.txt
+**Program used:**     subsys_db_rebuilder.py    
+**Files needed:**	
+
+* subsystems.complex    
+* subsys2role    
+* subsys2peg    
+* subsys.txt
 
 
 **Command:**    
