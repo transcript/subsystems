@@ -22,9 +22,10 @@ For a full write-up of the initial reasons behind this code, check out the blog 
 
 
 **Command:**    
-    `python2.7 subsys_db_rebuilder.py subsystems.complex subsys2role subsys2peg subsys.txt`
-    `sed 's/\t/ /g' subsystems.complex.merged > notabs.subsystems.complex.merged`
-    `python2.7 duplicate_counter.py notabs.subsystems.complex.merged`
+
+    `python2.7 subsys_db_rebuilder.py subsystems.complex subsys2role subsys2peg subsys.txt`    
+    `sed 's/\t/ /g' subsystems.complex.merged > notabs.subsystems.complex.merged`    
+    `python2.7 duplicate_counter.py notabs.subsystems.complex.merged`    
 
 Note that the four input files need to be in this specific order for the program to work.
 
