@@ -23,12 +23,20 @@ For a full write-up of the initial reasons behind this code, check out the blog 
 
 **Command:**    
     `python2.7 subsys_db_rebuilder.py subsystems.complex subsys2role subsys2peg subsys.txt`
+    `sed 's/\t/ /g' subsystems.complex.merged > notabs.subsystems.complex.merged`
+    `python2.7 duplicate_counter.py notabs.subsystems.complex.merged`
 
 Note that the four input files need to be in this specific order for the program to work.
 
+These commands do the following:
+
+1. Merge the individual files into one complete overall file
+2. Replace tabs with spaces (needed if converting into a BLAST database)
+3. Scrub out duplicate sequences - this significantly reduces the total database footprint, from 7 Gb down to 4.4 Gb.
+
 **Output:** Two files:    
 
-* subsystems.complex.merged - this large file, in FASTA format, contains all protein sequences from the Subsystems database.  The header contains - tab separated:
+* notabs.subsystems.complex.merged.reduced - this large file, in FASTA format, contains all UNIQUE protein sequences from the Subsystems database.  The header contains - tab separated:
 	* The Fig ID
 	* The specific function (level 4 hierarchy)
 	* Level 3 hierarchy
